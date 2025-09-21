@@ -1,0 +1,83 @@
+# Core FastAPI and Web Framework - learned this stack works well
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database and ORM - postgres is solid
+SQLAlchemy==2.0.21
+psycopg2==2.9.8
+alembic==1.13.1
+
+# Google Ads and API Integration - their api is complex but powerful
+google-ads==21.3.0
+google-api-core==2.11.1
+google-auth==2.22.0
+google-auth-oauthlib==1.0.0
+googleapis-common-protos==1.60.0
+grpcio==1.57.0
+grpcio-status==1.57.0
+
+# Additional API integrations - real data sources
+aiohttp==3.9.1
+pytrends==4.9.2
+requests-oauthlib==1.3.1
+
+# Data Processing and Analysis - pandas is a lifesaver
+pandas==2.1.1
+numpy==1.26.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# Real API data processing
+httpx==0.25.2
+asyncio-throttle==1.0.2
+
+# AI and Machine Learning - openai api is getting better
+openai==1.3.7
+scikit-learn==1.3.2
+nltk==3.8.1
+spacy==3.7.2
+
+# Utilities and Configuration - dotenv is essential
+python-dotenv==1.0.0
+PyYAML==6.0.1
+python-dateutil==2.8.2
+pytz==2023.3.post1
+tzdata==2023.3
+
+# Security and Authentication - security first
+cryptography==41.0.8
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Monitoring and Logging - good logging saves lives
+structlog==23.2.0
+loguru==0.7.2
+
+# Caching and Performance - redis is fast
+redis==5.0.1
+celery==5.3.4
+
+# Development and Testing - pytest is solid
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Legacy dependencies for compatibility - some are still needed
+cachetools==5.3.1
+certifi==2023.7.22
+charset-normalizer==3.2.0
+idna==3.4
+oauthlib==3.2.2
+proto-plus==1.22.3
+protobuf==4.24.2
+pyasn1==0.5.0
+pyasn1-modules==0.3.0
+pytrends==4.9.2
+requests-oauthlib==1.3.1
+rsa==4.9
+six==1.16.0
+typing_extensions==4.8.0
+urllib3==1.26.16

@@ -1,0 +1,106 @@
+version: '3.8'
+
+# docker compose setup - learned this from a tutorial
+services:
+  # Backend FastAPI Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://sem_user:sem_password@db:5432/sem_plan
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=True
+      - ALLOWED_ORIGINS=["http://localhost:3000", "http://localhost:5173"]
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    # health check for backend - always good to have
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React Service - vite is fast
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_APP_NAME=SEM Plan Tool
+      - VITE_APP_VERSION=2.0.0
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # PostgreSQL Database - postgres is solid
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=sem_plan
+      - POSTGRES_USER=sem_user
+      - POSTGRES_PASSWORD=sem_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    # health check for database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sem_user -d sem_plan"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache - redis is fast
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    # health check for redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Reverse Proxy (Production) - nginx is reliable
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: sem_plan_network

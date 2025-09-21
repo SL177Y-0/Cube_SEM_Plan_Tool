@@ -1,4 +1,4 @@
-# 🎯 SEM Plan Tool - Ultimate Search Engine Marketing Campaign Planner
+#  SEM Plan Tool - Ultimate Search Engine Marketing Campaign Planner
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -8,27 +8,27 @@
 
 > **The most advanced SEM campaign planning tool with AI-powered optimization, real-time Google Ads integration, and comprehensive analytics.**
 
-## 🚀 Features
+##  Features
 
-### 🧠 AI-Powered Intelligence
+###  AI-Powered Intelligence
 - **Smart Keyword Research**: Advanced keyword discovery with AI-driven relevance scoring
 - **Performance Max Optimization**: Automated PMax theme generation and optimization
 - **Budget Intelligence**: AI-driven budget allocation for maximum ROAS
 - **Competitive Analysis**: Advanced competitor research and market insights
 
-### 📊 Real-Time Analytics
+### Real-Time Analytics
 - **Live Google Ads Integration**: Real-time data from Google Keyword Planner
 - **Performance Tracking**: Comprehensive campaign performance monitoring
 - **Conversion Optimization**: Data-driven CRO recommendations
 - **Trend Analysis**: SEM trend insights and best practices
 
-### 🎯 Campaign Management
+### Campaign Management
 - **Multi-Campaign Support**: Manage multiple campaigns from a single dashboard
 - **Advanced Targeting**: Geographic, demographic, and behavioral targeting
 - **A/B Testing**: Built-in testing framework for campaign optimization
 - **Automated Reporting**: Scheduled reports and performance alerts
 
-## 🏗️ Architecture
+## Architecture
 
 ### Backend (FastAPI)
 - **High-Performance API**: Built with FastAPI for maximum speed and reliability
@@ -42,7 +42,7 @@
 - **Responsive Design**: Mobile-first approach with perfect responsiveness
 - **Real-Time Updates**: Live data synchronization with backend
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.9+
@@ -93,18 +93,8 @@ npm run dev
 ### 4. Access the Application
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
 
-## 📖 Documentation
-
-Comprehensive documentation is available in the `docs/` directory:
-
-- **[API Documentation](docs/api/README.md)** - Complete API reference and integration guide
-- **[User Guide](docs/user-guide/README.md)** - Step-by-step user instructions
-- **[Development Guide](docs/development/README.md)** - Setup and contribution guidelines
-- **[Deployment Guide](docs/deployment/README.md)** - Production deployment instructions
-
-## 🎯 Key Capabilities
+## Key Capabilities
 
 ### Keyword Research
 - **Volume Analysis**: Search volume data from Google Keyword Planner
@@ -124,7 +114,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **Cost Control**: Automated bid management
 - **Performance Monitoring**: Real-time budget performance tracking
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -158,7 +148,7 @@ VITE_GOOGLE_ADS_CLIENT_ID=your_client_id
 VITE_GOOGLE_ANALYTICS_ID=your_ga_id
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
 ```bash
@@ -177,7 +167,7 @@ npm test
 npm run test:e2e
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker Deployment
 ```bash
@@ -191,13 +181,6 @@ docker-compose ps
 docker-compose logs -f
 ```
 
-### Cloud Deployment
-See the [Deployment Guide](docs/deployment/README.md) for detailed cloud deployment instructions for AWS, Google Cloud, and Azure.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Development Guide](docs/development/README.md) for setup instructions and contribution guidelines.
-
 ### Development Workflow
 1. Fork the repository
 2. Create a feature branch
@@ -205,14 +188,14 @@ We welcome contributions! Please see our [Development Guide](docs/development/RE
 4. Add tests for new functionality
 5. Submit a pull request
 
-## 📊 Performance
+## Performance
 
 - **API Response Time**: < 100ms average
 - **Frontend Load Time**: < 2s initial load
 - **Database Queries**: Optimized with proper indexing
 - **Caching**: Redis-based caching for improved performance
 
-## 🔒 Security
+## Security
 
 - **Authentication**: JWT-based authentication
 - **Authorization**: Role-based access control
@@ -220,32 +203,7 @@ We welcome contributions! Please see our [Development Guide](docs/development/RE
 - **Input Validation**: Comprehensive input sanitization
 - **SQL Injection Protection**: ORM-based query protection
 
-## 📈 Roadmap
-
-### Q1 2025
-- [ ] Advanced AI optimization algorithms
-- [ ] Multi-language support
-- [ ] Enhanced reporting features
-- [ ] Mobile app development
-
-### Q2 2025
-- [ ] Advanced competitor analysis
-- [ ] Social media integration
-- [ ] Automated campaign management
-- [ ] Enterprise features
-
-## 🆘 Support
-
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Email**: support@semplantool.com
-- **Community**: [Discord Server](https://discord.gg/semplantool)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Google Ads API for providing comprehensive SEM data
 - OpenAI and Anthropic for AI-powered features
@@ -253,7 +211,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - All contributors who help make this project better
 
 ---
-
-**Built with ❤️ for the SEM community**
-
-*Last updated: January 27, 2025*

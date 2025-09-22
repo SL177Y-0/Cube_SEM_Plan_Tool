@@ -101,20 +101,17 @@ If you use Docker, you’ll still want to provide the same env values (through C
 - **Competitive Analysis**: Advanced competitor research and market insights
 
 ### Real-Time Analytics
-### Real-Time Analytics
 - **Live Google Ads Integration**: Real-time data from Google Keyword Planner
 - **Performance Tracking**: Comprehensive campaign performance monitoring
 - **Conversion Optimization**: Data-driven CRO recommendations
 - **Trend Analysis**: SEM trend insights and best practices
 
 ### Campaign Management
-### Campaign Management
 - **Multi-Campaign Support**: Manage multiple campaigns from a single dashboard
 - **Advanced Targeting**: Geographic, demographic, and behavioral targeting
 - **A/B Testing**: Built-in testing framework for campaign optimization
 - **Automated Reporting**: Scheduled reports and performance alerts
 
-## Architecture
 ## Architecture
 
 ### Backend (FastAPI)

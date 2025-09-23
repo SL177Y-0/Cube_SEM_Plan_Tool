@@ -1,133 +1,122 @@
-#  SEM Plan Tool - Ultimate Search Engine Marketing Campaign Planner
-#  SEM Plan Tool - Ultimate Search Engine Marketing Campaign Planner
+# SEM Plan Tool
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![React 18](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+A small, practical app to build an SEM plan from a brand URL, a competitor URL, and a few constraints. It discovers keywords, filters them, groups them into ad groups, proposes PMax themes, and suggests CPC bids.
 
-A small FastAPI + React project for planning SEM campaigns. It talks to Google Ads (when credentials are provided) and exposes a few endpoints the frontend calls.
+## What it uses
+- Backend: FastAPI (Python)
+- Frontend: React + Vite + TypeScript + Tailwind + shadcn/ui
+- Data sources (in order):
+  1) Google Ads Keyword Planner
+  2) Microsoft Advertising Keyword Planner
+  3) SerpAPI (autocomplete/related) as a free discovery fallback
 
-## What’s here
-- Backend: FastAPI (`backend/app`)
-- Frontend: React + Vite + TypeScript (`frontend`)
-- Minimal environment config via `.env` files (kept small on purpose)
+## Fallback logic (short version)
+- If Google Ads keys are present and valid → use Google Keyword Planner.
+- Else if Microsoft Ads keys are present → use MS Ads Keyword Planner.
+- Else if `SERPAPI_KEY` is present → do discovery via Google autocomplete/related (reduced KPIs).
 
 ## Requirements
-- Python 3.9+
-- Node.js 18+
+- Node 18+, npm
+- Python 3.10+
+- Docker (optional, for compose)
 
 ## Environment
-Only add what’s actually used by the current code.
+Create `backend/.env` (or copy `backend/env.example`) and fill what you have.
 
-Backend (`backend/.env`):
-```
-GOOGLE_ADS_CLIENT_ID=
-GOOGLE_ADS_CLIENT_SECRET=
-GOOGLE_ADS_REFRESH_TOKEN=
-GOOGLE_ADS_DEVELOPER_TOKEN=
-GOOGLE_ADS_CUSTOMER_ID=
-```
+Google Ads (optional but preferred):
+- GOOGLE_ADS_DEVELOPER_TOKEN
+- GOOGLE_ADS_CLIENT_ID
+- GOOGLE_ADS_CLIENT_SECRET
+- GOOGLE_ADS_REFRESH_TOKEN
+- GOOGLE_ADS_CUSTOMER_ID
 
-Optional (backend, only if you plan to wire real trend sources):
-```
-GOOGLE_TRENDS_API_KEY=
-SEMRUSH_API_KEY=
-AHREFS_API_KEY=
-```
+Microsoft Ads (optional fallback):
+- MSADS_DEVELOPER_TOKEN
+- MSADS_CLIENT_ID
+- MSADS_CLIENT_SECRET
+- MSADS_REFRESH_TOKEN
+- MSADS_CUSTOMER_ID
+- MSADS_ACCOUNT_ID
 
-Frontend (`frontend/.env`):
+Discovery (optional free fallback):
+- SERPAPI_KEY
+
+Frontend `frontend/.env`:
 ```
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-## Getting started
-### 1) Backend
+## Quick start (Docker)
+From the repo root:
+```
+docker compose up --build
+```
+- Frontend: http://localhost:3000
+- Backend:  http://localhost:8000/docs
+
+You can pass env vars in `docker-compose.yml` under the backend `environment:` section.
+
+## Quick start (local dev)
+Backend:
 ```
 cd backend
-python -m venv venv
-# Windows: venv\Scripts\activate
-# macOS/Linux: source venv/bin/activate
+python -m venv .venv
+. .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-copy .env.example .env  # or cp on macOS/Linux
-# Fill in your Google Ads values if you have them
-
-uvicorn app.main:semApp --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:semApp --host 0.0.0.0 --port 8000
 ```
-- API docs: http://localhost:8000/docs
-- Health check: http://localhost:8000/health
 
-### 2) Frontend
+Frontend (new terminal):
 ```
 cd frontend
 npm install
-
-copy .env.example .env  # or cp on macOS/Linux
-# VITE_API_BASE_URL should point to your backend (default above)
-
-npm run dev
+npm run dev   # serves on :8080
 ```
-By default Vite is set to run on port 8080 (see `frontend/vite.config.ts`).
-- Frontend: http://localhost:8080
+Set `VITE_API_BASE_URL` to point at your backend (default above).
 
-## Common endpoints (backend)
-- `GET /health` — simple health check
-- `GET /api/v1/trends` — trends data (falls back to static if no keys)
-- `POST /api/v1/generate_keywords` — keyword ideas via Google Ads if configured
+## API cheatsheet
+Generate keywords
+```
+curl -X POST http://localhost:8000/api/v1/generate_keywords \
+  -H "Content-Type: application/json" \
+  -d '{
+    "seed_keywords": ["vegan protein", "whey isolate"],
+    "brand_url": "https://yourbrand.com",
+    "competitor_url": "https://competitor.com",
+    "locations": ["US"],
+    "max_results": 200
+  }'
+```
 
-## Docker (optional)
-There’s a `docker-compose.yml` if you want to run things in containers. It includes backend, frontend, Postgres, and Redis. It’s not required for local dev.
+Filter
 ```
-docker-compose up --build
+curl -X POST http://localhost:8000/api/v1/filter_keywords \
+  -H "Content-Type: application/json" \
+  -d '{ "keywords": [], "min_search_volume": 500 }'
 ```
-If you use Docker, you’ll still want to provide the same env values (through Compose or `.env` files) for Google Ads.
+
+Group into ad groups
+```
+curl -X POST http://localhost:8000/api/v1/group_keywords \
+  -H "Content-Type: application/json" \
+  -d '{ "keywords": [] }'
+```
+
+PMax themes
+```
+curl -X POST http://localhost:8000/api/v1/pmax_themes \
+  -H "Content-Type: application/json" \
+  -d '{ "keywords": [] }'
+```
+
+Bid suggestions
+```
+curl -X POST http://localhost:8000/api/v1/calculate_bids \
+  -H "Content-Type: application/json" \
+  -d '{ "ad_groups": [], "budgets": {"search": 5000, "shopping": 3000, "pmax": 7000}, "conversion_rate": 0.02 }'
+```
 
 ## Notes
-- The app works without Google Ads credentials, but keyword endpoints will return empty results.
-- CORS is open for local development. Lock it down before deploying.
-- If you change ports, update `VITE_API_BASE_URL` accordingly.
-
-## Troubleshooting
-- Frontend can’t reach the API: check `VITE_API_BASE_URL` and that the backend is running on that host/port.
-- Google Ads calls return empty results: confirm all five Google Ads env vars are set and valid.
-- Port conflicts: adjust `frontend/vite.config.ts` or pass a different `--port` to uvicorn.
-
-
-###  AI-Powered Intelligence
-- **Smart Keyword Research**: Advanced keyword discovery with AI-driven relevance scoring
-- **Performance Max Optimization**: Automated PMax theme generation and optimization
-- **Budget Intelligence**: AI-driven budget allocation for maximum ROAS
-- **Competitive Analysis**: Advanced competitor research and market insights
-
-### Real-Time Analytics
-### Real-Time Analytics
-- **Live Google Ads Integration**: Real-time data from Google Keyword Planner
-- **Performance Tracking**: Comprehensive campaign performance monitoring
-- **Conversion Optimization**: Data-driven CRO recommendations
-- **Trend Analysis**: SEM trend insights and best practices
-
-### Campaign Management
-### Campaign Management
-- **Multi-Campaign Support**: Manage multiple campaigns from a single dashboard
-- **Advanced Targeting**: Geographic, demographic, and behavioral targeting
-- **A/B Testing**: Built-in testing framework for campaign optimization
-- **Automated Reporting**: Scheduled reports and performance alerts
-
-## Architecture
-## Architecture
-
-### Backend (FastAPI)
-- **High-Performance API**: Built with FastAPI for maximum speed and reliability
-- **Database**: PostgreSQL with SQLAlchemy ORM for robust data management
-- **Authentication**: JWT-based security with role-based access control
-- **AI Integration**: OpenAI and Anthropic API integration for intelligent features
-
-### Frontend (React + TypeScript)
-- **Modern UI**: Built with React 18, TypeScript, and Tailwind CSS
-- **Component Library**: Shadcn UI components for consistent, beautiful design
-- **Responsive Design**: Mobile-first approach with perfect responsiveness
-- **Real-Time Updates**: Live data synchronization with backend
-
----
+- Secrets live in env files, not in code.
+- If you only have SerpAPI, the app still works, but KPIs (volume/bids/competition) are limited.
+- UI is dark, responsive, and intentionally minimal. Adjust colors in `frontend/src/index.css` if you want a different look.

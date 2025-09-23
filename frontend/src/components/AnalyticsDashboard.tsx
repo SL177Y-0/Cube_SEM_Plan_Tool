@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
+  Brain,
+  Globe,
   TrendingUp, 
   TrendingDown, 
   Target, 
@@ -13,13 +15,11 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Zap,
-  Brain,
-  Globe
+  Zap
 } from 'lucide-react';
 
 // analytics data structure - keeping it comprehensive
-interface AnalyticsData {
+interface DashboardData {
   totalImpressions: number;
   totalClicks: number;
   totalConversions: number;
@@ -58,16 +58,17 @@ interface AnalyticsData {
   };
 }
 
-interface AnalyticsDashboardProps {
-  data: AnalyticsData;
+interface DashboardProps {
+  data: DashboardData;
   isLoading?: boolean;
 }
 
-const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, isLoading = false }) => {
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
+const AnalyticsDashboard: React.FC<DashboardProps> = ({ data, isLoading = false }) => {
+  // little helper for big numbers
+  const formatBigNumber = (num: number) => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+    return num;
   };
 
   const formatCurrency = (num: number) => {
@@ -107,49 +108,33 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, isLoading
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="card-gradient card-hover">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-              <div className="min-w-0 flex-1">
-                <p className="text-responsive-xs sm:text-sm font-medium text-muted-foreground">Total Impressions</p>
-                <p className="text-xl sm:text-2xl font-bold text-gradient">{formatNumber(data.totalImpressions)}</p>
-                <div className="flex items-center mt-1">
-                  {data.trends.impressions > 0 ? (
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-pastel-green mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-pastel-coral mr-1" />
-                  )}
-                  <span className={`text-responsive-xs sm:text-sm ${data.trends.impressions > 0 ? 'text-pastel-green' : 'text-pastel-coral'}`}>
-                    {Math.abs(data.trends.impressions)}%
-                  </span>
-                </div>
+          <CardContent className="p-4 sm:p-6 flex items-center justify-between">
+            <div>
+              <p className="text-responsive-xs sm:text-sm font-medium text-muted-foreground">Total Impressions</p>
+              <p className="text-xl sm:text-2xl font-bold text-gradient">{formatBigNumber(data.totalImpressions)}</p>
+              <div className="flex items-center mt-1">
+                {data.trends.impressions > 0 ? <TrendingUp className="w-4 h-4 text-pastel-green mr-1" /> : <TrendingDown className="w-4 h-4 text-pastel-coral mr-1" />}
+                <span className={`text-sm ${data.trends.impressions > 0 ? 'text-pastel-green' : 'text-pastel-coral'}`}>{Math.abs(data.trends.impressions)}%</span>
               </div>
-              <div className="p-2 sm:p-3 bg-pastel-blue/20 rounded-lg">
-                <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-pastel-blue" />
-              </div>
+            </div>
+            <div className="p-3 bg-pastel-blue/20 rounded-lg">
+              <Eye className="w-6 h-6 text-pastel-blue" />
             </div>
           </CardContent>
         </Card>
 
         <Card className="card-gradient card-hover">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-              <div className="min-w-0 flex-1">
-                <p className="text-responsive-xs sm:text-sm font-medium text-muted-foreground">Total Clicks</p>
-                <p className="text-xl sm:text-2xl font-bold text-gradient">{formatNumber(data.totalClicks)}</p>
-                <div className="flex items-center mt-1">
-                  {data.trends.clicks > 0 ? (
-                    <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-pastel-green mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-pastel-coral mr-1" />
-                  )}
-                  <span className={`text-responsive-xs sm:text-sm ${data.trends.clicks > 0 ? 'text-pastel-green' : 'text-pastel-coral'}`}>
-                    {Math.abs(data.trends.clicks)}%
-                  </span>
-                </div>
+          <CardContent className="p-4 sm:p-6 flex items-center justify-between">
+            <div>
+              <p className="text-responsive-xs sm:text-sm font-medium text-muted-foreground">Total Clicks</p>
+              <p className="text-xl sm:text-2xl font-bold text-gradient">{formatBigNumber(data.totalClicks)}</p>
+              <div className="flex items-center mt-1">
+                {data.trends.clicks > 0 ? <TrendingUp className="w-4 h-4 text-pastel-green mr-1" /> : <TrendingDown className="w-4 h-4 text-pastel-coral mr-1" />}
+                <span className={`text-sm ${data.trends.clicks > 0 ? 'text-pastel-green' : 'text-pastel-coral'}`}>{Math.abs(data.trends.clicks)}%</span>
               </div>
-              <div className="p-2 sm:p-3 bg-pastel-green/20 rounded-lg">
-                <MousePointer className="w-5 h-5 sm:w-6 sm:h-6 text-pastel-green" />
-              </div>
+            </div>
+            <div className="p-3 bg-pastel-green/20 rounded-lg">
+              <MousePointer className="w-6 h-6 text-pastel-green" />
             </div>
           </CardContent>
         </Card>
@@ -159,7 +144,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, isLoading
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
               <div className="min-w-0 flex-1">
                 <p className="text-responsive-xs sm:text-sm font-medium text-muted-foreground">Total Conversions</p>
-                <p className="text-xl sm:text-2xl font-bold text-gradient">{formatNumber(data.totalConversions)}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gradient">{formatBigNumber(data.totalConversions)}</p>
                 <div className="flex items-center mt-1">
                   {data.trends.conversions > 0 ? (
                     <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-pastel-green mr-1" />
@@ -284,8 +269,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, isLoading
                     <span className="font-medium text-responsive-sm break-words">{keyword.keyword}</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mt-2 text-responsive-xs sm:text-sm text-muted-foreground">
-                    <div>Impressions: {formatNumber(keyword.impressions)}</div>
-                    <div>Clicks: {formatNumber(keyword.clicks)}</div>
+                    <div>Impressions: {formatBigNumber(keyword.impressions)}</div>
+                    <div>Clicks: {formatBigNumber(keyword.clicks)}</div>
                     <div>CTR: {formatPercentage(keyword.ctr)}</div>
                     <div>CPC: {formatCurrency(keyword.cpc)}</div>
                   </div>
@@ -300,7 +285,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, isLoading
         </CardContent>
       </Card>
 
-      {/* Campaign Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="card-gradient card-hover">
           <CardHeader>

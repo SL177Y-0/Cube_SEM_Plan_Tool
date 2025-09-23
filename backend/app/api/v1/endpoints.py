@@ -1,29 +1,21 @@
-# sem api endpoints - the meat and potatoes
-# built this after way too many google ads api calls
-# seriously, their rate limits are brutal
-
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-import asyncio
 from datetime import datetime
 
-# import real api services - no more mock data
 from app.services.google_ads_service import google_ads_service
-from app.services.trends_service import trends_service
+from app.services.ms_ads_service import ms_ads_service
+from app.services.serp_service import serp_service
 
-# setup the router - keeping it simple
-apiRouter = APIRouter()
+router = APIRouter()
+apiRouter = router
 
-# data models - keeping it simple but functional
 class KeywordRequest(BaseModel):
-    seed_keywords: List[str] = Field(..., description="Seed keywords for research")
-    brand_url: Optional[str] = Field(None, description="Brand website URL")
-    competitor_url: Optional[str] = Field(None, description="Competitor website URL")
-    locations: Optional[List[str]] = Field(default=[], description="Service locations")
-    max_results: Optional[int] = Field(default=1000, description="Maximum results to return")
-    include_semantic_search: Optional[bool] = Field(default=True, description="Include semantic search keywords")
-    include_ai_overviews: Optional[bool] = Field(default=True, description="Include AI Overview keywords")
+    seed_keywords: List[str]
+    brand_url: Optional[str] = None
+    competitor_url: Optional[str] = None
+    locations: Optional[List[str]] = Field(default=[])
+    max_results: Optional[int] = Field(default=1000)
 
 class KeywordItem(BaseModel):
     keyword: str
@@ -31,43 +23,43 @@ class KeywordItem(BaseModel):
     competition: str
     top_of_page_bid_low: float
     top_of_page_bid_high: float
-    source: str  # 'seed', 'site', 'competitor', 'semantic', 'ai_overview'
-    intent: str  # 'informational', 'navigational', 'transactional', 'commercial'
+    source: str
+    intent: str
     difficulty_score: float
     opportunity_score: float
 
 class FilterRequest(BaseModel):
     keywords: List[KeywordItem]
-    min_search_volume: int = Field(default=500, description="Minimum search volume")
-    max_competition: Optional[str] = Field(default="High", description="Maximum competition level")
-    min_opportunity_score: Optional[float] = Field(default=0.6, description="Minimum opportunity score")
-    exclude_branded: Optional[bool] = Field(default=False, description="Exclude branded keywords")
+    min_search_volume: int = 500
+    max_competition: Optional[str] = "High"
+    min_opportunity_score: Optional[float] = 0.6
+    exclude_branded: Optional[bool] = False
 
 class AdGroup(BaseModel):
     name: str
     theme: str
     keywords: List[KeywordItem]
-    suggested_match_types: Dict[str, List[str]]  # exact, phrase, bmm
-    cpc_range: Dict[str, float]  # low, high
+    suggested_match_types: Dict[str, List[str]]
+    cpc_range: Dict[str, float]
     estimated_clicks: int
     estimated_conversions: float
     target_cpa: float
 
 class PMaxTheme(BaseModel):
     title: str
-    category: str  # 'product', 'use_case', 'demographic', 'seasonal'
+    category: str
     description: str
     keywords: List[str]
     target_audience: str
     estimated_impressions: int
     expected_ctr: float
-    asset_suggestions: Dict[str, List[str]]  # headlines, descriptions, images
+    asset_suggestions: Dict[str, List[str]]
 
 class BudgetRequest(BaseModel):
     ad_groups: List[AdGroup]
-    budgets: Dict[str, float]  # search, shopping, pmax
-    conversion_rate: float = Field(default=0.02, description="Expected conversion rate")
-    target_roas: Optional[float] = Field(default=4.0, description="Target ROAS")
+    budgets: Dict[str, float]
+    conversion_rate: float = 0.02
+    target_roas: Optional[float] = 4.0
 
 class CampaignOptimization(BaseModel):
     campaign_type: str
@@ -77,125 +69,98 @@ class CampaignOptimization(BaseModel):
     creative_recommendations: List[str]
     performance_predictions: Dict[str, float]
 
-# no more mock data - everything comes from real apis now
-# learned this the hard way when mock data didn't match real performance
-
-# trends endpoint - now using real api data
-@apiRouter.get("/trends", response_model=Dict[str, Any])
-async def get_sem_trends():
-    try:
-        # get real trends data from api services
-        trends_data = await trends_service.get_sem_trends()
-        
-        return {
-            "status": "success",
-            "trends": trends_data,
-            "best_practices": [
-                "Use AI-powered creative generation",
-                "Implement smart bidding strategies",
-                "Focus on conversion value over volume",
-                "Optimize for mobile-first experiences",
-                "Leverage first-party data for targeting"
-            ],
-            "data_source": "real_api" if trends_service.is_configured else "fallback",
-            "generated_at": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch trends: {str(e)}")
-
 @apiRouter.post("/generate_keywords", response_model=Dict[str, Any])
 async def generate_keywords(request: KeywordRequest):
     try:
-        # get real keyword data from google ads api
         real_keywords = await google_ads_service.get_keyword_ideas(
             seed_keywords=request.seed_keywords,
             location_ids=request.locations
         )
+
+        if not real_keywords and request.seed_keywords:
+            ms_keywords = await ms_ads_service.get_keyword_ideas(
+                seed_keywords=request.seed_keywords,
+                location_ids=request.locations
+            )
+            if ms_keywords:
+                real_keywords = [
+                    {
+                        "keyword": k.get("keyword") or k.get("text") or "",
+                        "avg_monthly_searches": k.get("avg_monthly_searches") or k.get("monthly_searches") or 0,
+                        "competition": k.get("competition") or ("High" if (k.get("competition_level") or 0) > 0.66 else ("Medium" if (k.get("competition_level") or 0) > 0.33 else "Low")),
+                        "low_top_of_page_bid_micros": int((k.get("cpc_low") or k.get("suggested_bid_low") or 0) * 1_000_000),
+                        "high_top_of_page_bid_micros": int((k.get("cpc_high") or k.get("suggested_bid_high") or k.get("cpc") or 0) * 1_000_000),
+                        "source": "ms_ads_planner"
+                    }
+                    for k in ms_keywords if (k.get("keyword") or k.get("text"))
+                ]
+
+        if not real_keywords and request.seed_keywords:
+            discovered = await serp_service.discover_keywords(request.seed_keywords)
+            real_keywords = [
+                {
+                    "keyword": r["keyword"],
+                    "avg_monthly_searches": r.get("score", 0),
+                    "competition": "Unknown",
+                    "low_top_of_page_bid_micros": 0,
+                    "high_top_of_page_bid_micros": 0,
+                    "source": "serpapi"
+                }
+                for r in discovered
+            ]
         
-        # convert to our format
-        keyword_items = []
-        for kw_data in real_keywords:
-            keyword_items.append(KeywordItem(
+        def to_scores(volume: int, competition: str) -> Dict[str, float]:
+            comp_map = {"Low": 0.2, "Medium": 0.5, "High": 0.8, "Unknown": 0.5}
+            difficulty = comp_map.get(competition, 0.5)
+            vol_norm = min(1.0, volume / 20000.0)
+            opportunity = round(max(0.0, min(1.0, (0.7 * vol_norm) + (0.3 * (1 - difficulty)))), 3)
+            return {"difficulty": round(difficulty, 3), "opportunity": opportunity}
+
+        keyword_items = [
+            KeywordItem(
                 keyword=kw_data["keyword"],
                 avg_monthly_searches=kw_data.get("avg_monthly_searches", 0),
                 competition=kw_data.get("competition", "Unknown"),
-                top_of_page_bid_low=kw_data.get("low_top_of_page_bid_micros", 0) / 1000000,
-                top_of_page_bid_high=kw_data.get("high_top_of_page_bid_micros", 0) / 1000000,
+                top_of_page_bid_low=kw_data.get("low_top_of_page_bid_micros", 0) / 1_000_000,
+                top_of_page_bid_high=kw_data.get("high_top_of_page_bid_micros", 0) / 1_000_000,
                 source=kw_data.get("source", "keyword_planner"),
-                intent="commercial",  # would need additional analysis
-                difficulty_score=0.5,  # would need additional calculation
-                opportunity_score=0.6   # would need additional calculation
-            ))
+                intent="commercial",
+                **(lambda s: {"difficulty_score": s["difficulty"], "opportunity_score": s["opportunity"]})(to_scores(kw_data.get("avg_monthly_searches", 0), kw_data.get("competition", "Unknown")))
+            ) for kw_data in real_keywords
+        ]
         
-        # if no real data available, return empty results
         if not keyword_items:
-            return {
-                "status": "success",
-                "total_keywords": 0,
-                "keywords": [],
-                "message": "No keyword data available - check API configuration",
-                "data_source": "google_ads_api",
-                "generated_at": datetime.now().isoformat()
-            }
+            return {"status": "success", "total_keywords": 0, "keywords": [], "data_source": "none", "generated_at": datetime.now().isoformat()}
+        
+        data_source = "google_ads_api" if google_ads_service.is_configured and real_keywords else ("ms_ads_api" if ms_ads_service.is_configured else "serpapi_fallback")
         
         return {
             "status": "success",
             "total_keywords": len(keyword_items),
             "keywords": keyword_items[:request.max_results],
-            "trends_analyzed": [
-                "Semantic Search Integration",
-                "AI Overview Optimization",
-                "Intent-Based Targeting",
-                "Zero-Click Search Adaptation"
-            ],
-            "data_source": "google_ads_api",
+            "data_source": data_source,
             "generated_at": datetime.now().isoformat()
         }
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Keyword generation failed: {str(e)}")
 
 @apiRouter.post("/filter_keywords", response_model=Dict[str, Any])
 async def filter_keywords(request: FilterRequest):
     try:
-        filteredList = []
-        
-        # go through each keyword and apply filters
-        for kw in request.keywords:
-            # volume check
-            if kw.avg_monthly_searches < request.min_search_volume:
-                continue
-                
-            # competition check - this one's tricky
-            if request.max_competition and kw.competition == "High" and request.max_competition != "High":
-                continue
-                
-            # opportunity score
-            if kw.opportunity_score < request.min_opportunity_score:
-                continue
-                
-            # brand exclusion
-            if request.exclude_branded and "brand" in kw.keyword.lower():
-                continue
-                
-            filteredList.append(kw)
-        
-        # sort by opportunity - learned this works best
-        filteredList.sort(key=lambda x: x.opportunity_score, reverse=True)
-        
+        filtered_kws = [
+            kw for kw in request.keywords
+            if kw.avg_monthly_searches >= request.min_search_volume and
+            not (request.max_competition and kw.competition == "High" and request.max_competition != "High") and
+            kw.opportunity_score >= request.min_opportunity_score and
+            not (request.exclude_branded and "brand" in kw.keyword.lower())
+        ]
+        filtered_kws.sort(key=lambda x: x.opportunity_score, reverse=True)
         return {
             "status": "success",
             "original_count": len(request.keywords),
-            "filtered_count": len(filteredList),
-            "keywords": filteredList,
-            "filter_criteria": {
-                "min_search_volume": request.min_search_volume,
-                "max_competition": request.max_competition,
-                "min_opportunity_score": request.min_opportunity_score,
-                "exclude_branded": request.exclude_branded
-            }
+            "filtered_count": len(filtered_kws),
+            "keywords": filtered_kws,
         }
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Keyword filtering failed: {str(e)}")
 
@@ -203,139 +168,76 @@ async def filter_keywords(request: FilterRequest):
 async def group_keywords(request: FilterRequest):
     try:
         adGroups = []
-        
-        # brand terms first - these are gold
         brandKws = [kw for kw in request.keywords if kw.intent == "navigational"]
         if brandKws:
             adGroups.append(AdGroup(
                 name="Brand Terms",
-                theme="Direct brand searches and branded keywords",
+                theme="Brand searches",
                 keywords=brandKws,
-                suggested_match_types={
-                    "exact": [kw.keyword for kw in brandKws],
-                    "phrase": [kw.keyword for kw in brandKws],
-                    "bmm": []
-                },
+                suggested_match_types={"exact": [kw.keyword for kw in brandKws], "phrase": [kw.keyword for kw in brandKws], "bmm": []},
                 cpc_range={"low": 1.5, "high": 3.2},
                 estimated_clicks=2500,
                 estimated_conversions=50.0,
                 target_cpa=50.0
             ))
-        
-        # category stuff
         categoryKws = [kw for kw in request.keywords if kw.intent == "commercial"]
         if categoryKws:
             adGroups.append(AdGroup(
                 name="Category Terms",
-                theme="Product category and service-related keywords",
+                theme="Product or service categories",
                 keywords=categoryKws,
-                suggested_match_types={
-                    "exact": [kw.keyword for kw in categoryKws[:5]],
-                    "phrase": [kw.keyword for kw in categoryKws],
-                    "bmm": [kw.keyword for kw in categoryKws]
-                },
+                suggested_match_types={"exact": [kw.keyword for kw in categoryKws[:5]], "phrase": [kw.keyword for kw in categoryKws], "bmm": [kw.keyword for kw in categoryKws]},
                 cpc_range={"low": 3.2, "high": 8.5},
                 estimated_clicks=1800,
                 estimated_conversions=36.0,
                 target_cpa=45.0
             ))
-        
-        # informational - good for awareness
         infoKws = [kw for kw in request.keywords if kw.intent == "informational"]
         if infoKws:
             adGroups.append(AdGroup(
                 name="Informational Terms",
-                theme="Educational and informational queries",
+                theme="Educational queries",
                 keywords=infoKws,
-                suggested_match_types={
-                    "exact": [],
-                    "phrase": [kw.keyword for kw in infoKws],
-                    "bmm": [kw.keyword for kw in infoKws]
-                },
+                suggested_match_types={"exact": [], "phrase": [kw.keyword for kw in infoKws], "bmm": [kw.keyword for kw in infoKws]},
                 cpc_range={"low": 1.2, "high": 3.5},
                 estimated_clicks=1200,
                 estimated_conversions=24.0,
                 target_cpa=40.0
             ))
-        
-        return {
-            "status": "success",
-            "ad_groups": adGroups,
-            "total_keywords": len(request.keywords),
-            "grouped_keywords": sum(len(group.keywords) for group in adGroups),
-            "optimization_notes": [
-                "Match types optimized for 2025 trends",
-                "Intent-based grouping for better performance",
-                "CPC ranges based on competition analysis"
-            ]
-        }
-        
+        return {"status": "success", "ad_groups": adGroups, "total_keywords": len(request.keywords)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Keyword grouping failed: {str(e)}")
 
 @apiRouter.post("/pmax_themes", response_model=Dict[str, Any])
 async def generate_pmax_themes(request: FilterRequest):
     try:
-        # get real performance max insights from google ads api
-        pmax_insights = await google_ads_service.get_performance_max_insights()
-        
-        # if no real data available, return empty results
-        if not pmax_insights:
-            return {
-                "status": "success",
-                "themes": [],
-                "message": "No Performance Max data available - check API configuration",
-                "data_source": "google_ads_api",
-                "optimization_features": [
-                    "AI-powered asset group segmentation",
-                    "Audience signal optimization",
-                    "Creative performance prediction",
-                    "Cross-channel optimization"
-                ],
-                "best_practices": [
-                    "Include diverse asset types (images, videos, text)",
-                    "Use high-quality, relevant creative assets",
-                    "Test different audience signals",
-                    "Monitor asset performance regularly"
-                ]
-            }
-        
-        # convert real data to our format
-        themes = []
-        for insight in pmax_insights:
+        # naive clustering by simple tokens
+        buckets: Dict[str, List[str]] = {"product": [], "use_case": [], "demographic": [], "seasonal": []}
+        for kw in request.keywords:
+            text = kw.keyword.lower()
+            if any(t in text for t in ["for men", "for women", "kids", "senior", "student"]):
+                buckets["demographic"].append(kw.keyword)
+            elif any(t in text for t in ["winter", "summer", "spring", "fall", "black friday", "cyber monday"]):
+                buckets["seasonal"].append(kw.keyword)
+            elif any(t in text for t in ["best", "near me", "how to", "vs", "review", "ideas", "tips"]):
+                buckets["use_case"].append(kw.keyword)
+            else:
+                buckets["product"].append(kw.keyword)
+        themes: List[PMaxTheme] = []
+        for cat, kws in buckets.items():
+            if not kws:
+                continue
             themes.append(PMaxTheme(
-                title=insight.get("title", "Performance Max Campaign"),
-                category=insight.get("category", "product"),
-                description=insight.get("description", "AI-optimized campaign theme"),
-                keywords=insight.get("keywords", []),
-                target_audience=insight.get("target_audience", "General Audience"),
-                estimated_impressions=insight.get("estimated_impressions", 0),
-                expected_ctr=insight.get("expected_ctr", 0.0),
-                asset_suggestions=insight.get("asset_suggestions", {
-                    "headlines": [],
-                    "descriptions": [],
-                    "images": []
-                })
+                title=f"{cat.title()} Theme",
+                category=cat,
+                description=f"Asset group centered on {cat.replace('_',' ')} queries",
+                keywords=kws[:30],
+                target_audience="General",
+                estimated_impressions=sum(k.avg_monthly_searches for k in request.keywords if k.keyword in kws),
+                expected_ctr=0.02,
+                asset_suggestions={"headlines": [], "descriptions": [], "images": []}
             ))
-        
-        return {
-            "status": "success",
-            "themes": themes,
-            "data_source": "google_ads_api",
-            "optimization_features": [
-                "AI-powered asset group segmentation",
-                "Audience signal optimization",
-                "Creative performance prediction",
-                "Cross-channel optimization"
-            ],
-            "best_practices": [
-                "Include diverse asset types (images, videos, text)",
-                "Use high-quality, relevant creative assets",
-                "Test different audience signals",
-                "Monitor asset performance regularly"
-            ]
-        }
-        
+        return {"status": "success", "themes": themes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PMax theme generation failed: {str(e)}")
 
@@ -343,31 +245,22 @@ async def generate_pmax_themes(request: FilterRequest):
 async def calculate_bids(request: BudgetRequest):
     try:
         totalBudget = sum(request.budgets.values())
-        totalConversions = sum(group.estimated_conversions for group in request.ad_groups)
-        
-        # calculate target cpa
-        targetCpa = totalBudget / max(totalConversions, 1)
-        
-        # bid recommendations
+        totalConversions = sum(g.estimated_conversions for g in request.ad_groups) or 1
+        targetCpa = totalBudget / totalConversions
         bidRecs = []
-        for group in request.ad_groups:
+        for g in request.ad_groups:
             targetCpc = targetCpa * request.conversion_rate
-            recommendedBid = min(max(targetCpc, group.cpc_range["low"]), group.cpc_range["high"])
-            
+            recommendedBid = min(max(targetCpc, g.cpc_range["low"]), g.cpc_range["high"])
             bidRecs.append({
-                "ad_group_name": group.name,
+                "ad_group_name": g.name,
                 "target_cpa": targetCpa,
                 "target_cpc": targetCpc,
                 "recommended_bid": recommendedBid,
-                "bid_range": group.cpc_range,
-                "estimated_clicks": group.estimated_clicks,
-                "estimated_conversions": group.estimated_conversions
+                "bid_range": g.cpc_range,
+                "estimated_clicks": g.estimated_clicks,
+                "estimated_conversions": g.estimated_conversions
             })
-        
-        # expected roas
-        totalRevenue = sum(group.estimated_conversions * targetCpa * 4 for group in request.ad_groups)
-        expectedRoas = totalRevenue / totalBudget
-        
+        expectedRoas = 4.0
         return {
             "status": "success",
             "budget_allocation": request.budgets,
@@ -375,86 +268,6 @@ async def calculate_bids(request: BudgetRequest):
             "target_cpa": targetCpa,
             "expected_roas": expectedRoas,
             "bid_recommendations": bidRecs,
-            "optimization_strategy": {
-                "conversion_rate": request.conversion_rate,
-                "target_roas": request.target_roas,
-                "bid_strategy": "Target CPA" if request.target_roas is None else "Target ROAS",
-                "optimization_notes": [
-                    "Bids optimized for 2% conversion rate",
-                    "ROAS target: 4.0x",
-                    "Smart bidding recommended for all campaigns"
-                ]
-            }
         }
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Bid calculation failed: {str(e)}")
-
-@apiRouter.post("/optimize_campaigns", response_model=Dict[str, Any])
-async def optimize_campaigns(request: BudgetRequest):
-    try:
-        optimizations = []
-        
-        # search campaign
-        optimizations.append(CampaignOptimization(
-            campaign_type="Search",
-            budget_allocation={"search": 0.4, "shopping": 0.3, "pmax": 0.3},
-            bid_strategy="Target ROAS",
-            targeting_optimization={
-                "match_types": ["exact", "phrase", "bmm"],
-                "negative_keywords": ["free", "cheap", "discount"],
-                "audience_signals": ["in-market", "affinity", "custom"]
-            },
-            creative_recommendations=[
-                "Use AI-generated headlines for better relevance",
-                "Include call-to-action in all ad copy",
-                "Test different value propositions"
-            ],
-            performance_predictions={
-                "expected_ctr": 0.035,
-                "expected_cvr": 0.025,
-                "expected_roas": 4.2
-            }
-        ))
-        
-        # performance max
-        optimizations.append(CampaignOptimization(
-            campaign_type="Performance Max",
-            budget_allocation={"search": 0.2, "shopping": 0.4, "pmax": 0.4},
-            bid_strategy="Maximize Conversion Value",
-            targeting_optimization={
-                "audience_signals": ["customer_match", "similar_audiences", "in-market"],
-                "asset_groups": 3,
-                "creative_diversity": "high"
-            },
-            creative_recommendations=[
-                "Include video assets for better performance",
-                "Use high-quality product images",
-                "Test different creative formats"
-            ],
-            performance_predictions={
-                "expected_ctr": 0.028,
-                "expected_cvr": 0.022,
-                "expected_roas": 5.1
-            }
-        ))
-        
-        return {
-            "status": "success",
-            "optimizations": optimizations,
-            "key_insights": [
-                "Performance Max shows highest ROAS potential",
-                "Video assets critical for PMax success",
-                "Audience signals improve targeting precision",
-                "Smart bidding reduces manual optimization"
-            ],
-            "next_steps": [
-                "Implement recommended bid strategies",
-                "Set up audience signals",
-                "Create diverse creative assets",
-                "Monitor performance and adjust"
-            ]
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Campaign optimization failed: {str(e)}")

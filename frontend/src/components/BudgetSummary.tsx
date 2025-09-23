@@ -18,45 +18,36 @@ interface BudgetBreakdown {
   expectedRoas: number;
 }
 
-interface BudgetSummaryProps {
+interface BudgetProps {
   budgetBreakdown: BudgetBreakdown[];
   totalBudget: number;
   overallRoas: number;
   conversionRate: number;
 }
 
+const campaignMeta = {
+  shopping: { color: 'text-pastel-blue', icon: <Target className="w-4 h-4" /> },
+  search: { color: 'text-pastel-green', icon: <BarChart3 className="w-4 h-4" /> },
+  'performance max': { color: 'text-pastel-coral', icon: <TrendingUp className="w-4 h-4" /> },
+  default: { color: 'text-pastel-purple', icon: <PieChart className="w-4 h-4" /> }
+};
+
 const BudgetSummary = ({ 
   budgetBreakdown, 
   totalBudget, 
   overallRoas, 
   conversionRate 
-}: BudgetSummaryProps) => {
+}: BudgetProps) => {
   // calculate totals - learned this pattern from a finance app
-  const totalExpectedConversions = budgetBreakdown.reduce(
-    (sum, item) => sum + item.estimatedConversions, 0
-  );
-  
-  const totalExpectedClicks = budgetBreakdown.reduce(
-    (sum, item) => sum + item.estimatedClicks, 0
+  const { totalExpectedConversions, totalExpectedClicks } = budgetBreakdown.reduce(
+    (totals, item) => ({
+      totalExpectedConversions: totals.totalExpectedConversions + item.estimatedConversions,
+      totalExpectedClicks: totals.totalExpectedClicks + item.estimatedClicks
+    }), { totalExpectedConversions: 0, totalExpectedClicks: 0 }
   );
 
-  // color coding for campaign types - helps with visual distinction
-  const getCampaignColor = (campaignType: string) => {
-    switch (campaignType.toLowerCase()) {
-      case 'shopping': return 'text-pastel-blue';
-      case 'search': return 'text-pastel-green';
-      case 'performance max': return 'text-pastel-coral';
-      default: return 'text-pastel-purple';
-    }
-  };
-
-  const getCampaignIcon = (campaignType: string) => {
-    switch (campaignType.toLowerCase()) {
-      case 'shopping': return <Target className="w-4 h-4" />;
-      case 'search': return <BarChart3 className="w-4 h-4" />;
-      case 'performance max': return <TrendingUp className="w-4 h-4" />;
-      default: return <PieChart className="w-4 h-4" />;
-    }
+  const getCampaignMeta = (campaignType: string) => {
+    return campaignMeta[campaignType.toLowerCase()] || campaignMeta.default;
   };
 
   return (
@@ -131,8 +122,8 @@ const BudgetSummary = ({
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <div className={`p-2 bg-muted rounded-lg ${getCampaignColor(campaign.campaignType)}`}>
-                    {getCampaignIcon(campaign.campaignType)}
+                  <div className={`p-2 bg-muted rounded-lg ${getCampaignMeta(campaign.campaignType).color}`}>
+                    {getCampaignMeta(campaign.campaignType).icon}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h4 className="font-semibold text-responsive-sm sm:text-base">{campaign.campaignType}</h4>
@@ -180,7 +171,6 @@ const BudgetSummary = ({
           ))}
         </div>
 
-        {/* Performance Insights */}
         <div className="bg-gradient-secondary/10 rounded-lg p-4 border border-secondary/30">
           <h4 className="font-semibold text-responsive-xs sm:text-sm mb-3 flex items-center space-x-2">
             <TrendingUp className="w-4 h-4 text-secondary" />

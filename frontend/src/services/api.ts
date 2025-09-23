@@ -128,7 +128,6 @@ class SEMApiClient {
     );
   }
 
-  // health check - always good to have for monitoring
   async healthCheck(): Promise<ApiResponse<any>> {
     try {
       const response = await this.client.get('/health');
@@ -138,7 +137,6 @@ class SEMApiClient {
     }
   }
 
-  // generate keywords with ai optimization - this is where the magic happens
   async generateKeywords(request: KeywordRequest): Promise<ApiResponse<{
     total_keywords: number;
     keywords: KeywordItem[];
@@ -153,7 +151,6 @@ class SEMApiClient {
     }
   }
 
-  // filter keywords with advanced criteria - learned this from google ads docs
   async filterKeywords(request: FilterRequest): Promise<ApiResponse<{
     original_count: number;
     filtered_count: number;
@@ -168,7 +165,6 @@ class SEMApiClient {
     }
   }
 
-  // group keywords into ad groups - this took forever to get right
   async groupKeywords(request: FilterRequest): Promise<ApiResponse<{
     ad_groups: AdGroup[];
     total_keywords: number;
@@ -183,7 +179,6 @@ class SEMApiClient {
     }
   }
 
-  // generate performance max themes - pmax is getting more important
   async generatePMaxThemes(request: FilterRequest): Promise<ApiResponse<{
     themes: PMaxTheme[];
     optimization_features: string[];
@@ -197,7 +192,6 @@ class SEMApiClient {
     }
   }
 
-  // calculate optimal bids - always tricky to get right
   async calculateBids(request: BudgetRequest): Promise<ApiResponse<{
     budget_allocation: any;
     total_budget: number;
@@ -214,74 +208,27 @@ class SEMApiClient {
     }
   }
 
-  // optimize campaigns with ai - this is where the real value is
-  async optimizeCampaigns(request: BudgetRequest): Promise<ApiResponse<{
-    optimizations: any[];
-    key_insights: string[];
-    next_steps: string[];
-  }>> {
-    try {
-      const response = await this.client.post('/api/v1/optimize_campaigns', request);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // get latest sem trends - always useful for planning
-  async getSEMTrends(): Promise<ApiResponse<{
-    trends: Array<{
-      trend: string;
-      description: string;
-      impact: string;
-      recommendation: string;
-    }>;
-    best_practices: string[];
-  }>> {
-    try {
-      const response = await this.client.get('/api/v1/trends');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  // error handling utility - learned this the hard way
   private handleError(error: any): Error {
     if (error.response) {
-      // server responded with error status
       const message = error.response.data?.error || error.response.data?.message || 'Server error';
       return new Error(`API Error (${error.response.status}): ${message}`);
     } else if (error.request) {
-      // request was made but no response received
       return new Error('Network error: Unable to connect to server');
     } else {
-      // something else happened
       return new Error(`Request error: ${error.message}`);
     }
   }
 }
 
-// create and export singleton instance - keeps things simple
 export const semApiClient = new SEMApiClient();
 
-// convenience functions for common operations - makes life easier
 export const api = {
-  // health and status
   health: () => semApiClient.healthCheck(),
-  
-  // keyword operations
   generateKeywords: (request: KeywordRequest) => semApiClient.generateKeywords(request),
   filterKeywords: (request: FilterRequest) => semApiClient.filterKeywords(request),
   groupKeywords: (request: FilterRequest) => semApiClient.groupKeywords(request),
-  
-  // campaign operations
   generatePMaxThemes: (request: FilterRequest) => semApiClient.generatePMaxThemes(request),
   calculateBids: (request: BudgetRequest) => semApiClient.calculateBids(request),
-  optimizeCampaigns: (request: BudgetRequest) => semApiClient.optimizeCampaigns(request),
-  
-  // trends and insights
-  getTrends: () => semApiClient.getSEMTrends(),
 };
 
 export default semApiClient;

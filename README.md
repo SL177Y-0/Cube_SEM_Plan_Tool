@@ -12,12 +12,14 @@ A small, practical app to build an SEM plan from a brand URL, a competitor URL, 
 - Backend: FastAPI (Python)
 - Frontend: React + Vite + TypeScript + Tailwind + shadcn/ui
 - Data sources (in order):
-  1) Google Ads Keyword Planner
-  2) Microsoft Advertising Keyword Planner
-  3) SerpAPI (autocomplete/related) as a free discovery fallback
+  1) DataForSEO (primary; ideas + KPIs)
+  2) Google Ads Keyword Planner
+  3) Microsoft Advertising Keyword Planner
+  4) SerpAPI (autocomplete/related) as a free discovery fallback
 
 ## Fallback logic (short version)
-- If Google Ads keys are present and valid → use Google Keyword Planner.
+- If DataForSEO credentials are present → use DataForSEO.
+- Else if Google Ads keys are present and valid → use Google Keyword Planner.
 - Else if Microsoft Ads keys are present → use MS Ads Keyword Planner.
 - Else if `SERPAPI_KEY` is present → do discovery via Google autocomplete/related (reduced KPIs).
 
@@ -29,7 +31,12 @@ A small, practical app to build an SEM plan from a brand URL, a competitor URL, 
 ## Environment
 Create `backend/.env` (or copy `backend/env.example`) and fill what you have.
 
-Google Ads (optional but preferred):
+DataForSEO (primary):
+- DATAFORSEO_API_LOGIN and DATAFORSEO_API_PASSWORD
+- or DATAFORSEO_API_KEY
+- optional: DATAFORSEO_BASE_URL (defaults to https://api.dataforseo.com)
+
+Google Ads (optional):
 - GOOGLE_ADS_DEVELOPER_TOKEN
 - GOOGLE_ADS_CLIENT_ID
 - GOOGLE_ADS_CLIENT_SECRET
@@ -89,7 +96,7 @@ curl -X POST http://localhost:8000/api/v1/generate_keywords \
     "seed_keywords": ["vegan protein", "whey isolate"],
     "brand_url": "https://yourbrand.com",
     "competitor_url": "https://competitor.com",
-    "locations": ["US"],
+    "locations": ["2840"],
     "max_results": 200
   }'
 ```

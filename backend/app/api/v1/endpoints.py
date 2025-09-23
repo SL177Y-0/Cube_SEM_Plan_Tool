@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
+from app.services.dataforseo_service import dataforseo_service
 from app.services.google_ads_service import google_ads_service
 from app.services.ms_ads_service import ms_ads_service
 from app.services.serp_service import serp_service
@@ -72,10 +73,36 @@ class CampaignOptimization(BaseModel):
 @apiRouter.post("/generate_keywords", response_model=Dict[str, Any])
 async def generate_keywords(request: KeywordRequest):
     try:
-        real_keywords = await google_ads_service.get_keyword_ideas(
-            seed_keywords=request.seed_keywords,
-            location_ids=request.locations
-        )
+        # Priority: DataForSEO → Google Ads → Microsoft Ads → SerpAPI discovery
+        real_keywords: List[Dict[str, Any]] = []
+
+        # Parse first numeric location if provided; default to US (2840)
+        location_code = 2840
+        try:
+            if request.locations:
+                first = request.locations[0]
+                if isinstance(first, str) and first.strip().isdigit():
+                    location_code = int(first.strip())
+        except Exception:
+            pass
+
+        if dataforseo_service.is_configured:
+            real_keywords = await dataforseo_service.get_keyword_data(
+                seed_keywords=request.seed_keywords,
+                location_code=location_code,
+                language_code="en",
+                brand_url=request.brand_url,
+                competitor_url=request.competitor_url,
+                min_volume=300,
+            )
+
+        if not real_keywords:
+            ga_keywords = await google_ads_service.get_keyword_ideas(
+                seed_keywords=request.seed_keywords,
+                location_ids=request.locations
+            )
+            if ga_keywords:
+                real_keywords = ga_keywords
 
         if not real_keywords and request.seed_keywords:
             ms_keywords = await ms_ads_service.get_keyword_ideas(
@@ -132,7 +159,11 @@ async def generate_keywords(request: KeywordRequest):
         if not keyword_items:
             return {"status": "success", "total_keywords": 0, "keywords": [], "data_source": "none", "generated_at": datetime.now().isoformat()}
         
-        data_source = "google_ads_api" if google_ads_service.is_configured and real_keywords else ("ms_ads_api" if ms_ads_service.is_configured else "serpapi_fallback")
+        data_source = (
+            "dataforseo_api" if (dataforseo_service.is_configured and real_keywords and real_keywords[0].get("source") == "dataforseo") else
+            ("google_ads_api" if google_ads_service.is_configured and real_keywords and real_keywords[0].get("source") != "ms_ads_planner" and real_keywords[0].get("source") != "serpapi" else
+             ("ms_ads_api" if ms_ads_service.is_configured and real_keywords and real_keywords[0].get("source") == "ms_ads_planner" else "serpapi_fallback"))
+        )
         
         return {
             "status": "success",

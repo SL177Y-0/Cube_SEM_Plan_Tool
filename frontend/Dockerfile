@@ -1,14 +1,17 @@
 # Frontend Dockerfile for SEM Plan Tool
 FROM node:18-alpine
 
+# Avoid rollup native binary on musl
+ENV ROLLUP_SKIP_NODE_NATIVE=1
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (include dev deps for build)
+RUN npm ci
 
 # Copy source code
 COPY . .

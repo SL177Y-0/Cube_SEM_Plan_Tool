@@ -2,6 +2,12 @@
 
 A small, practical app to build an SEM plan from a brand URL, a competitor URL, and a few constraints. It discovers keywords, filters them, groups them into ad groups, proposes PMax themes, and suggests CPC bids.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+
 ## What it uses
 - Backend: FastAPI (Python)
 - Frontend: React + Vite + TypeScript + Tailwind + shadcn/ui

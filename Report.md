@@ -1,4 +1,4 @@
-# SEM Plan Tool — End‑to‑End Human Report
+# SEM Plan Tool — End‑to‑End Written Report
 
 This is a practical SEM planner I’d happily hand to a teammate. You drop in a brand URL, a competitor, a couple of seeds, a country code (e.g., 2840 for US), and some budget assumptions. It fetches ideas, cleans them up, organizes the mess into ad groups and PMax themes, and gives you enough KPIs and exports to have a decent planning conversation.
 

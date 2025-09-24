@@ -138,3 +138,7 @@ pnpm-lock.yaml
 .venv
 .venv311
 .vscode 
+
+
+.venv311
+*.venv311

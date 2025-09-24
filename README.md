@@ -1,135 +1,64 @@
 # SEM Plan Tool
 
-A small, practical app to build an SEM plan from a brand URL, a competitor URL, and a few constraints. It discovers keywords, filters them, groups them into ad groups, proposes PMax themes, and suggests CPC bids.
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-## What it uses
-- Backend: FastAPI (Python)
-- Frontend: React + Vite + TypeScript + Tailwind + shadcn/ui
-- Data sources (in order):
-  1) DataForSEO (primary; ideas + KPIs)
-  2) Google Ads Keyword Planner
-  3) Microsoft Advertising Keyword Planner
-  4) SerpAPI (autocomplete/related) as a free discovery fallback
+FastAPI + React app to generate a structured SEM plan across Search, Shopping and Performance Max using DataForSEO as primary source with Google/Microsoft/SerpAPI fallbacks.
 
-## Fallback logic (short version)
-- If DataForSEO credentials are present → use DataForSEO.
-- Else if Google Ads keys are present and valid → use Google Keyword Planner.
-- Else if Microsoft Ads keys are present → use MS Ads Keyword Planner.
-- Else if `SERPAPI_KEY` is present → do discovery via Google autocomplete/related (reduced KPIs).
+## What’s Included
+- Keyword generation (DataForSEO → Google Ads → Microsoft Ads → SerpAPI)
+- Filtering, grouping, and bid calculation
+- PMax themes with asset suggestions (headlines/descriptions) and estimates
+- Shopping plan (derived purchase-intent terms)
+- Budget summary, projections, and analytics
+- Brand & competitor insights (tokenization with brand-token exclusion)
+- Save/Load plan (localStorage) and Export (CSV/JSON)
+- Responsive UI, strict dev port 3000
 
-## Requirements
-- Node 18+, npm
-- Python 3.10+
-- Docker (optional, for compose)
-
-## Environment
-Create `backend/.env` (or copy `backend/env.example`) and fill what you have.
-
-DataForSEO (primary):
-- DATAFORSEO_API_LOGIN and DATAFORSEO_API_PASSWORD
-- or DATAFORSEO_API_KEY
-- optional: DATAFORSEO_BASE_URL (defaults to https://api.dataforseo.com)
-
-Google Ads (optional):
-- GOOGLE_ADS_DEVELOPER_TOKEN
-- GOOGLE_ADS_CLIENT_ID
-- GOOGLE_ADS_CLIENT_SECRET
-- GOOGLE_ADS_REFRESH_TOKEN
-- GOOGLE_ADS_CUSTOMER_ID
-
-Microsoft Ads (optional fallback):
-- MSADS_DEVELOPER_TOKEN
-- MSADS_CLIENT_ID
-- MSADS_CLIENT_SECRET
-- MSADS_REFRESH_TOKEN
-- MSADS_CUSTOMER_ID
-- MSADS_ACCOUNT_ID
-
-Discovery (optional free fallback):
-- SERPAPI_KEY
-
-Frontend `frontend/.env`:
-```
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-## Quick start (Docker)
-From the repo root:
-```
-docker compose up --build
-```
-- Frontend: http://localhost:3000
-- Backend:  http://localhost:8000/docs
-
-You can pass env vars in `docker-compose.yml` under the backend `environment:` section.
-
-## Quick start (local dev)
-Backend:
+## Quick Start (Local)
+1) Backend
 ```
 cd backend
-python -m venv .venv
-. .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:semApp --host 0.0.0.0 --port 8000
+# create/activate venv if needed (already present as venv/)
+venv\Scripts\pip install -r requirements.txt
+venv\Scripts\python -m uvicorn app.main:semApp --host 0.0.0.0 --port 8000
 ```
 
-Frontend (new terminal):
+2) Frontend
 ```
 cd frontend
-npm install
-npm run dev   # serves on :8080
-```
-Set `VITE_API_BASE_URL` to point at your backend (default above).
-
-## API cheatsheet
-Generate keywords
-```
-curl -X POST http://localhost:8000/api/v1/generate_keywords \
-  -H "Content-Type: application/json" \
-  -d '{
-    "seed_keywords": ["vegan protein", "whey isolate"],
-    "brand_url": "https://yourbrand.com",
-    "competitor_url": "https://competitor.com",
-    "locations": ["2840"],
-    "max_results": 200
-  }'
+npm ci
+npm run dev
+# Vite on http://localhost:3000 (strictPort=true)
 ```
 
-Filter
-```
-curl -X POST http://localhost:8000/api/v1/filter_keywords \
-  -H "Content-Type: application/json" \
-  -d '{ "keywords": [], "min_search_volume": 500 }'
-```
+## Configuration
+Environment values are read via `app/config.py:get_env`. For local dev, the file includes hardcoded fallbacks so you can run without a `.env`.
+- DataForSEO: `DATAFORSEO_API_LOGIN` + `DATAFORSEO_API_PASSWORD` or `DATAFORSEO_API_KEY`
+- SERPAPI: `SERPAPI_KEY`
+- CORS: allow localhost dev ports
 
-Group into ad groups
-```
-curl -X POST http://localhost:8000/api/v1/group_keywords \
-  -H "Content-Type: application/json" \
-  -d '{ "keywords": [] }'
-```
+If you prefer `.env`, add it under `backend/.env` and ensure Docker compose points to it.
 
-PMax themes
-```
-curl -X POST http://localhost:8000/api/v1/pmax_themes \
-  -H "Content-Type: application/json" \
-  -d '{ "keywords": [] }'
-```
+## Usage Tips
+- Use numeric location codes (e.g., 2840 for US). The input form defaults `serviceLocations` to `2840`.
+- Minimum Search Volume defaults to 100; quick presets available (50/100/300).
+- If filtering returns no keywords, the UI gracefully falls back to show results.
+- Save/Load buttons store/retrieve your plan in localStorage.
+- Export CSV contains keyword rows by group; Export JSON contains the entire plan payload.
 
-Bid suggestions
-```
-curl -X POST http://localhost:8000/api/v1/calculate_bids \
-  -H "Content-Type: application/json" \
-  -d '{ "ad_groups": [], "budgets": {"search": 5000, "shopping": 3000, "pmax": 7000}, "conversion_rate": 0.02 }'
-```
+## Troubleshooting
+- Missing modules in editor: select interpreter `backend/venv/Scripts/python.exe` in VS Code.
+- DataForSEO 401: verify credentials. With API key, `Authorization: Basic <API_KEY>` is used. With login/password, `login:password` Basic is used.
+- Port conflicts: the frontend is strict on 3000; free the port or stop other apps.
+
+## Scripts
+- Backend run: `venv\Scripts\python -m uvicorn app.main:semApp --host 0.0.0.0 --port 8000`
+- Frontend run: `npm run dev` (in `frontend/`)
 
 ## Notes
-- Secrets live in env files, not in code.
-- If you only have SerpAPI, the app still works, but KPIs (volume/bids/competition) are limited.
-- UI is dark, responsive, and intentionally minimal. Adjust colors in `frontend/src/index.css` if you want a different look.
+- Deployment is omitted by request; the app is ready for containerization (Dockerfiles present) if needed later.
+- Code style favors readability and explicit flows; brand tokens are excluded from suggestions where relevant.

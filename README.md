@@ -59,6 +59,3 @@ If you prefer `.env`, add it under `backend/.env` and ensure Docker compose poin
 - Backend run: `venv\Scripts\python -m uvicorn app.main:semApp --host 0.0.0.0 --port 8000`
 - Frontend run: `npm run dev` (in `frontend/`)
 
-## Notes
-- Deployment is omitted by request; the app is ready for containerization (Dockerfiles present) if needed later.
-- Code style favors readability and explicit flows; brand tokens are excluded from suggestions where relevant.

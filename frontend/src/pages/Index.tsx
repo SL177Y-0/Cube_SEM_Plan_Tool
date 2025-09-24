@@ -247,18 +247,18 @@ const Index = () => {
           <div className="space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <h2 className="text-2xl sm:text-3xl font-bold text-gradient">SEM Campaign Plan</h2>
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 {getFavicon(lastInputs.brandUrl) && (
                   <img src={getFavicon(lastInputs.brandUrl)} alt="brand" className="w-5 h-5 sm:w-6 sm:h-6 rounded" />
                 )}
                 {getFavicon(lastInputs.competitorUrl) && (
                   <img src={getFavicon(lastInputs.competitorUrl)} alt="competitor" className="w-5 h-5 sm:w-6 sm:h-6 rounded" />
                 )}
-                <Button variant="outline" onClick={handleSave}>Save</Button>
-                <Button variant="outline" onClick={handleLoad}>Load</Button>
-                <Button variant="outline" onClick={handleExportCsv}>Export CSV</Button>
-                <Button variant="outline" onClick={handleExportJson}>Export JSON</Button>
-                <Button onClick={handleReset} variant="outline">New Plan</Button>
+                <Button size="sm" variant="outline" onClick={handleSave}>Save</Button>
+                <Button size="sm" variant="outline" onClick={handleLoad}>Load</Button>
+                <Button size="sm" variant="outline" onClick={handleExportCsv}>CSV</Button>
+                <Button size="sm" variant="outline" onClick={handleExportJson}>JSON</Button>
+                <Button size="sm" onClick={handleReset} variant="outline">New</Button>
               </div>
             </div>
 

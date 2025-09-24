@@ -80,7 +80,7 @@ const KeywordResults = ({ adGroups }: KeywordProps) => {
         {adGroups.map((group) => (
           <Collapsible key={group.name} open={expandedGroups.has(group.name)} onOpenChange={() => toggleGroup(group.name)} className="space-y-2">
             <CollapsibleTrigger asChild>
-              <Button variant="pill" className="w-full justify-between p-4 h-auto">
+              <Button variant="pill" className="w-full justify-between p-4 h-auto overflow-hidden">
                 <div className="flex items-center space-x-4 min-w-0 flex-1">
                   <div className="p-2 bg-muted rounded-xl">
                     {Object.keys(groupIcons).find(key => group.name.includes(key)) ? groupIcons[Object.keys(groupIcons).find(key => group.name.includes(key))] : <Target className="w-5 h-5 text-pastel-purple" />}
@@ -88,9 +88,15 @@ const KeywordResults = ({ adGroups }: KeywordProps) => {
                   <div className="text-left min-w-0 flex-1">
                     <h3 className="font-semibold truncate">{group.name}</h3>
                     <p className="text-xs text-muted-foreground line-clamp-2">{group.theme}</p>
+                    <div className="sm:hidden mt-1 flex items-center gap-2 text-[11px]">
+                      <span className="text-muted-foreground">Keywords:</span>
+                      <Badge variant="secondary" className="text-[10px]">{group.keywords.length}</Badge>
+                      <span className="text-muted-foreground ml-2">CPC:</span>
+                      <span className="text-pastel-yellow font-medium">${(group.suggestedCpc || 0).toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="hidden sm:flex items-center space-x-4 shrink-0">
                   <div className="text-right">
                     <div className="flex items-center space-x-2 text-xs">
                       <span className="text-muted-foreground">Keywords:</span>
@@ -111,23 +117,28 @@ const KeywordResults = ({ adGroups }: KeywordProps) => {
             </CollapsibleTrigger>
 
             <CollapsibleContent className="space-y-3 ml-0 mt-3">
-              <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <div className="bg-muted/30 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
                 {group.keywords.map((keyword, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-card rounded-lg border">
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      <span className="font-medium break-words">{keyword.keyword}</span>
-                      <Badge className={`${getMatchTypeColor(keyword.matchType)} text-xs`}>{keyword.matchType}</Badge>
+                  <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2.5 sm:p-3 bg-card rounded-lg border gap-2 sm:gap-3 overflow-hidden">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium break-words hyphens-auto min-w-0 truncate sm:whitespace-normal" title={keyword.keyword}>{keyword.keyword}</span>
+                        <Badge className={`${getMatchTypeColor(keyword.matchType)} text-[10px] sm:text-xs shrink-0 hidden sm:inline-flex`}>{keyword.matchType}</Badge>
+                      </div>
+                      <div className="sm:hidden mt-1">
+                        <Badge className={`${getMatchTypeColor(keyword.matchType)} text-[10px]`}>{keyword.matchType}</Badge>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 w-full sm:w-auto text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 w-full sm:w-auto text-[11px] sm:text-xs sm:min-w-[260px]">
                       <div className="text-center sm:text-left">
                         <p className="text-muted-foreground">Volume</p>
                         <p className="font-medium text-pastel-blue">{keyword.searchVolume.toLocaleString()}</p>
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-muted-foreground">Competition</p>
-                        <Badge variant="outline" className={`${getCompetitionColor(keyword.competition)} text-xs`}>{keyword.competition}</Badge>
+                        <p className="text-muted-foreground">Comp</p>
+                        <Badge variant="outline" className={`${getCompetitionColor(keyword.competition)} text-[10px] sm:text-xs`}>{keyword.competition}</Badge>
                       </div>
-                      <div className="text-center sm:text-left">
+                      <div className="col-span-2 sm:col-span-1 text-center sm:text-left">
                         <p className="text-muted-foreground">CPC</p>
                         <p className="font-medium text-pastel-yellow">${keyword.cpcLow.toFixed(2)} - ${keyword.cpcHigh.toFixed(2)}</p>
                       </div>

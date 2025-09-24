@@ -3,10 +3,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from app.services.dataforseo_service import dataforseo_service
-from app.services.google_ads_service import google_ads_service
-from app.services.ms_ads_service import ms_ads_service
-from app.services.serp_service import serp_service
+from ...services.dataforseo_service import dataforseo_service
+from ...services.google_ads_service import google_ads_service
+from ...services.ms_ads_service import ms_ads_service
+from ...services.serp_service import serp_service
 
 router = APIRouter()
 apiRouter = router
@@ -15,7 +15,7 @@ class KeywordRequest(BaseModel):
     seed_keywords: List[str]
     brand_url: Optional[str] = None
     competitor_url: Optional[str] = None
-    locations: Optional[List[str]] = Field(default=[])
+    locations: Optional[List[str]] = Field(default_factory=list)
     max_results: Optional[int] = Field(default=1000)
 
 class KeywordItem(BaseModel):
@@ -258,15 +258,25 @@ async def generate_pmax_themes(request: FilterRequest):
         for cat, kws in buckets.items():
             if not kws:
                 continue
+            # basic assets
+            top_keywords = kws[:6]
+            headlines = [f"Shop {k[:30].title()}" for k in top_keywords[:3]] + ["Fast Shipping", "Great Prices"]
+            descriptions = [
+                "Discover quality picks with fast delivery.",
+                "Save time and get better results with our selection.",
+            ]
+            images: List[str] = []
+            est_impr = int(sum(kw.avg_monthly_searches for kw in request.keywords if kw.keyword in kws) * 1.5)
+            expected_ctr = 0.02 if cat != "seasonal" else 0.03
             themes.append(PMaxTheme(
                 title=f"{cat.title()} Theme",
                 category=cat,
                 description=f"Asset group centered on {cat.replace('_',' ')} queries",
                 keywords=kws[:30],
                 target_audience="General",
-                estimated_impressions=sum(k.avg_monthly_searches for k in request.keywords if k.keyword in kws),
-                expected_ctr=0.02,
-                asset_suggestions={"headlines": [], "descriptions": [], "images": []}
+                estimated_impressions=est_impr,
+                expected_ctr=expected_ctr,
+                asset_suggestions={"headlines": headlines, "descriptions": descriptions, "images": images}
             ))
         return {"status": "success", "themes": themes}
     except Exception as e:

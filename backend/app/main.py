@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import uvicorn
 
-from app.api.v1.endpoints import router as v1_router
+from .api.v1.endpoints import router as v1_router
 
 semApp = FastAPI(
     title="SEM Plan Tool API",

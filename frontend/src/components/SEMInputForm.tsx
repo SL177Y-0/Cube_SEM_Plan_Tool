@@ -35,10 +35,10 @@ const fieldCls = "bg-input/70 border border-border text-foreground rounded-xl fo
 
 const SEMInputForm = ({ onSubmit, isLoading = false }: SEMInputFormProps) => {
   const [formData, setFormData] = useState<FormData>({
-    brandUrl: "", competitorUrl: "", serviceLocations: "",
+    brandUrl: "", competitorUrl: "", serviceLocations: "2840",
     seedKeywords: "",
     shoppingBudget: "", searchBudget: "", pmaxBudget: "",
-    conversionRate: "2.0", minSearchVolume: "500"
+    conversionRate: "2.0", minSearchVolume: "100"
   });
 
   const { toast } = useToast();
@@ -82,7 +82,7 @@ const SEMInputForm = ({ onSubmit, isLoading = false }: SEMInputFormProps) => {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="serviceLocations" className="text-xs text-muted-foreground">Service Locations</Label>
-              <Textarea id="serviceLocations" placeholder="New York, Los Angeles, Chicago" value={formData.serviceLocations} onChange={handleInputChange} className={fieldCls + " min-h-[72px]"} />
+              <Textarea id="serviceLocations" placeholder="2840 for US" value={formData.serviceLocations} onChange={handleInputChange} className={fieldCls + " min-h-[72px]"} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="seedKeywords" className="text-xs text-muted-foreground">Seed Keywords (comma-separated)</Label>
@@ -114,7 +114,12 @@ const SEMInputForm = ({ onSubmit, isLoading = false }: SEMInputFormProps) => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="minSearchVolume" className="text-xs text-muted-foreground">Minimum Search Volume</Label>
-                <Input id="minSearchVolume" type="number" placeholder="500" value={formData.minSearchVolume} onChange={handleInputChange} className={fieldCls} />
+                <div className="flex items-center gap-2">
+                  <Input id="minSearchVolume" type="number" placeholder="100" value={formData.minSearchVolume} onChange={handleInputChange} className={fieldCls} />
+                  <Button type="button" variant="outline" size="sm" onClick={()=>setFormData(p=>({...p, minSearchVolume: '50'}))}>50</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>setFormData(p=>({...p, minSearchVolume: '100'}))}>100</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>setFormData(p=>({...p, minSearchVolume: '300'}))}>300</Button>
+                </div>
               </div>
             </div>
           </Section>

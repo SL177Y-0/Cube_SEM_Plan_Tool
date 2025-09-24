@@ -134,3 +134,7 @@ venv.bak/
 bun.lockb
 yarn.lock
 pnpm-lock.yaml
+
+.venv
+.venv311
+.vscode 

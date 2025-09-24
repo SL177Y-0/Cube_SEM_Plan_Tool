@@ -1,13 +1,13 @@
-import os
 import logging
 from typing import List, Dict, Any
 import requests
+from ..config import get_env
 
 logger = logging.getLogger(__name__)
 
 class SerpService:
     def __init__(self):
-        self.api_key = os.getenv('SERPAPI_KEY')
+        self.api_key = get_env('SERPAPI_KEY')
         self.base_url = 'https://serpapi.com/search.json'
         self.is_configured = bool(self.api_key)
         if not self.is_configured:
@@ -84,4 +84,4 @@ class SerpService:
             logger.error(f"related_searches error: {e}")
             return []
 
-serp_service = SerpService() 
+serp_service = SerpService()

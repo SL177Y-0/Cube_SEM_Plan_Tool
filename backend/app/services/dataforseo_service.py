@@ -1,4 +1,3 @@
-import os
 import base64
 import json
 import logging
@@ -6,6 +5,7 @@ from urllib.parse import urlparse
 from typing import List, Dict, Any, Set
 
 import requests
+from ..config import get_env
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +19,10 @@ class DataForSEOService:
     """
 
     def __init__(self) -> None:
-        self.api_login = os.getenv("DATAFORSEO_API_LOGIN")
-        self.api_password = os.getenv("DATAFORSEO_API_PASSWORD")
-        self.api_key = os.getenv("DATAFORSEO_API_KEY")
-        self.base = os.getenv("DATAFORSEO_BASE_URL", "https://api.dataforseo.com")
+        self.api_login = get_env("DATAFORSEO_API_LOGIN")
+        self.api_password = get_env("DATAFORSEO_API_PASSWORD")
+        self.api_key = get_env("DATAFORSEO_API_KEY")
+        self.base = get_env("DATAFORSEO_BASE_URL", "https://api.dataforseo.com")
         self.session = requests.Session()
 
         self.is_configured = bool((self.api_login and self.api_password) or self.api_key)
@@ -31,7 +31,8 @@ class DataForSEOService:
 
     def _auth_headers(self) -> Dict[str, str]:
         if self.api_key:
-            return {"Authorization": f"Basic {base64.b64encode((self.api_key + ':').encode()).decode()}"}
+            # DataForSEO API accepts API key directly as Basic auth (already base64 string)
+            return {"Authorization": f"Basic {self.api_key}"}
         if self.api_login and self.api_password:
             token = base64.b64encode(f"{self.api_login}:{self.api_password}".encode()).decode()
             return {"Authorization": f"Basic {token}"}
@@ -177,4 +178,4 @@ class DataForSEOService:
         return filtered
 
 
-dataforseo_service = DataForSEOService() 
+dataforseo_service = DataForSEOService()
